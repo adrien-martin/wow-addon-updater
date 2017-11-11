@@ -1,4 +1,5 @@
 import packages.requests as requests
+from bs4 import BeautifulSoup
 
 
 # Site splitter
@@ -6,6 +7,8 @@ import packages.requests as requests
 def findZiploc(addonpage):
     # Curse
     if addonpage.startswith('https://mods.curse.com/addons/wow/'):
+        return curse('https://www.curseforge.com/wow/addons/' + addonpage.split('/')[-1])
+    if addonpage.startswith('https://www.curseforge.com/wow/addons/'):
         return curse(addonpage)
 
     # Tukui
@@ -24,6 +27,8 @@ def findZiploc(addonpage):
 def getCurrentVersion(addonpage):
     # Curse
     if addonpage.startswith('https://mods.curse.com/addons/wow/'):
+        return getCurseVersion('https://www.curseforge.com/wow/addons/' + addonpage.split('/')[-1])
+    if addonpage.startswith('https://www.curseforge.com/wow/addons/'):
         return getCurseVersion(addonpage)
 
     # Tukui
@@ -44,10 +49,17 @@ def getCurrentVersion(addonpage):
 def curse(addonpage):
     try:
         page = requests.get(addonpage + '/download')
-        contentString = str(page.content)
-        indexOfZiploc = contentString.find('data-href') + 11  # Will be the index of the first char of the url
-        endQuote = contentString.find('"', indexOfZiploc)  # Will be the index of the ending quote after the url
-        return contentString[indexOfZiploc:endQuote]
+        html_parser = BeautifulSoup(page.content, 'html.parser')
+        href = ''
+        for download_link in html_parser.find_all(class_="download__link"):
+            href = download_link['href']
+        href_split = href.split('/')
+        download_position = href_split.index('download')
+        relative_url_array = href_split[download_position:]
+        relative_path = '/' + '/'.join(relative_url_array)
+
+        download_url = addonpage + relative_path
+        return download_url
     except Exception:
         print('Failed to find downloadable zip file for addon. Skipping...\n')
         return ''
@@ -55,11 +67,10 @@ def curse(addonpage):
 
 def getCurseVersion(addonpage):
     try:
-        page = requests.get(addonpage)
-        contentString = str(page.content)
-        indexOfVer = contentString.find('newest-file') + 26  # first char of the version string
-        endTag = contentString.find('</li>', indexOfVer)  # ending tag after the version string
-        return contentString[indexOfVer:endTag].strip()
+        page = requests.get(addonpage + '/files')
+        html_parser = BeautifulSoup(page.content, 'html.parser')
+        version = html_parser.find_all(class_="table__content file__name full")[0].text
+        return version
     except Exception:
         print('Failed to find version number for: ' + addonpage)
         return ''

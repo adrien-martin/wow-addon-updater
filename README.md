@@ -4,6 +4,8 @@ This utility provides an alternative to the Twitch/Curse client for management a
 
 ## Changelog
 
+* 11/11/2017 - Update to match new curse URL/Pages (https://mods.curse.com/addons/wow is replaced by https://www.curseforge.com/wow/addons)
+
 * 7/2/2017 - Fixed bug that would cause the app to crash after downloading with no previous pip installations (i.e. the import errors)
 
 ## First-time setup
